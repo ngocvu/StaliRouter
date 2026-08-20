@@ -149,7 +149,7 @@ function assertRequiredApiArtifacts(cliAppDir) {
 }
 
 function buildCliPackage() {
-  console.log("📦 Building 9Router CLI package with Next.js...\n");
+  console.log("📦 Building StaliRouter CLI package with Next.js...\n");
 
   fs.mkdirSync(buildHomeDir, { recursive: true });
   fs.mkdirSync(path.join(buildHomeDir, "AppData", "Roaming"), { recursive: true });
@@ -253,7 +253,7 @@ function buildCliPackage() {
   const betterDir = path.join(cliAppDir, "node_modules", "better-sqlite3");
   if (fs.existsSync(betterDir)) {
     fs.rmSync(betterDir, { recursive: true, force: true });
-    console.log("✅ Stripped better-sqlite3 (lives in ~/.9router/runtime)");
+    console.log("✅ Stripped better-sqlite3 (lives in ~/.stalirouter/runtime)");
   }
   console.log("");
 
@@ -319,6 +319,17 @@ function buildCliPackage() {
     console.log("✅ Copied updater files\n");
   } else {
     console.log("⏭️  No updater files found\n");
+  }
+
+  // Step 7c: Copy shared appIdentity for standalone runtime (dataDir, updater, mitm)
+  console.log("7️⃣ c Copying shared appIdentity...");
+  const sharedSrc = path.join(cliDir, "shared");
+  const sharedDest = path.join(cliAppDir, "shared");
+  if (fs.existsSync(sharedSrc)) {
+    copyRecursive(sharedSrc, sharedDest);
+    console.log("✅ Copied shared appIdentity\n");
+  } else {
+    console.log("⏭️  No cli/shared found\n");
   }
 
   // Step 8: Build MITM server (config driven - see app/cli/scripts/buildMitm.js)

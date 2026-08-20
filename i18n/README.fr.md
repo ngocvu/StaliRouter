@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="Tableau de bord 9Router" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="Tableau de bord 9Router" width="800"/>
   
-  # 9Router - Routeur IA GRATUIT et économiseur de tokens
+  # StaliRouter - Routeur IA GRATUIT et économiseur de tokens
   
   **N'arrêtez jamais de coder. Économisez 20 à 40 % de tokens avec RTK + bascule automatique vers des modèles d'IA GRATUITS et bon marché.**
   

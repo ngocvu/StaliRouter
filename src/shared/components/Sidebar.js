@@ -16,6 +16,7 @@ import NineRemotePromoModal from "./NineRemotePromoModal";
 const VISIBLE_MEDIA_KINDS = ["embedding", "image", "video", "tts", "stt"];
 // Combined entry: webSearch + webFetch share one page at /dashboard/media-providers/web
 const COMBINED_WEB_ITEM = { id: "web", label: "Web Fetch & Search", icon: "travel_explore", href: "/dashboard/media-providers/web" };
+const STALI_ONLY = process.env.NEXT_PUBLIC_STALI_ONLY_MODE !== "false";
 
 const navItems = [
   { href: "/dashboard/endpoint", label: "Endpoint & Key", icon: "api" },
@@ -26,6 +27,13 @@ const navItems = [
   { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
   { href: "/dashboard/token-saver", label: "Token Saver", icon: "savings" },
   // { href: "/dashboard/pxpipe", label: "PXPIPE", icon: "image" },
+  { href: "/dashboard/cli-tools", label: "CLI Tools", icon: "terminal" },
+];
+
+const staliNavItems = [
+  { href: "/dashboard", label: "Stali Quick Setup", icon: "api" },
+  { href: "/dashboard/providers", label: "Stali Providers", icon: "dns" },
+  { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
   { href: "/dashboard/cli-tools", label: "CLI Tools", icon: "terminal" },
 ];
 
@@ -158,7 +166,7 @@ export default function Sidebar({ onClose }) {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
-          {navItems.map((item) => (
+          {(STALI_ONLY ? staliNavItems : navItems).map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -183,6 +191,7 @@ export default function Sidebar({ onClose }) {
           ))}
 
           {/* System section */}
+          {!STALI_ONLY && (
           <div className="pt-3 mt-2 space-y-0.5">
             <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
               System
@@ -302,7 +311,7 @@ export default function Sidebar({ onClose }) {
               <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
                 computer
               </span>
-              <span className="text-[13px] font-medium">9Remote</span>
+              <span className="text-[13px] font-medium">Remote</span>
             </button>
 
             {/* 9English */}
@@ -344,6 +353,30 @@ export default function Sidebar({ onClose }) {
               <span className="text-[13px] font-medium">Settings</span>
             </Link>
           </div>
+          )}
+
+          {STALI_ONLY && (
+            <div className="pt-3 mt-2 space-y-0.5">
+              <p className="px-4 text-xs font-semibold text-text-muted/60 uppercase tracking-wider mb-2">
+                Stali Mode
+              </p>
+              <Link
+                href="/dashboard/profile"
+                onClick={onClose}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
+                  isActive("/dashboard/profile")
+                    ? "bg-primary/10 text-primary"
+                    : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                )}
+              >
+                <span className={cn("material-symbols-outlined text-[18px]", isActive("/dashboard/profile") ? "fill-1" : "group-hover:text-primary transition-colors")}>
+                  settings
+                </span>
+                <span className="text-[13px] font-medium">Settings</span>
+              </Link>
+            </div>
+          )}
         </nav>
 
       </aside>
@@ -356,7 +389,7 @@ export default function Sidebar({ onClose }) {
         isOpen={showUpdateModal}
         onClose={() => setShowUpdateModal(false)}
         onConfirm={handleUpdate}
-        title="Update 9Router"
+        title="Update StaliRouter"
         message={`Show install command for v${updateInfo?.latestVersion || ""}? You can copy it and shutdown to install manually.`}
         confirmText="Show Command"
         cancelText="Cancel"
@@ -407,7 +440,7 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
           <span className="material-symbols-outlined text-[24px]">content_copy</span>
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Update 9Router{latestVersion ? ` to v${latestVersion}` : ""}</h2>
+          <h2 className="text-lg font-semibold">Update StaliRouter{latestVersion ? ` to v${latestVersion}` : ""}</h2>
           <p className="text-xs text-white/60">
             {isDisconnected
               ? "Server stopped. Paste the command into a terminal to install."
@@ -426,7 +459,7 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
       <ol className="text-xs text-white/70 space-y-1 list-decimal list-inside mb-4">
         <li>Click <strong>Copy & Shutdown</strong> below.</li>
         <li>Paste the command into your terminal and press Enter.</li>
-        <li>Run <code className="px-1 rounded bg-white/10 text-green-400">9router</code> again after install.</li>
+        <li>Run <code className="px-1 rounded bg-white/10 text-green-400">stalirouter</code> again after install.</li>
       </ol>
 
       {isDisconnected ? (

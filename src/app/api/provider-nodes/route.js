@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createProviderNode, getProviderNodes } from "@/models";
 import { OPENAI_COMPATIBLE_PREFIX, ANTHROPIC_COMPATIBLE_PREFIX, CUSTOM_EMBEDDING_PREFIX } from "@/shared/constants/providers";
 import { generateId } from "@/shared/utils";
+import { isAllowedStaliBaseUrl, isStaliOnlyMode, normalizeBaseUrlV1 } from "@/lib/staliOnly";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,15 @@ const CUSTOM_EMBEDDING_DEFAULTS = {
 export async function GET() {
   try {
     const nodes = await getProviderNodes();
-    return NextResponse.json({ nodes });
+    if (!isStaliOnlyMode()) {
+      return NextResponse.json({ nodes });
+    }
+    const filtered = (nodes || []).filter((n) => {
+      if (!n) return false;
+      if (n.type !== "openai-compatible") return false;
+      return isAllowedStaliBaseUrl(n.baseUrl);
+    });
+    return NextResponse.json({ nodes: filtered });
   } catch (error) {
     console.log("Error fetching provider nodes:", error);
     return NextResponse.json({ error: "Failed to fetch provider nodes" }, { status: 500 });
@@ -33,6 +42,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { name, prefix, apiType, baseUrl, type } = body;
+    const staliOnly = isStaliOnlyMode();
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -45,6 +55,21 @@ export async function POST(request) {
     // Determine type
     const nodeType = type || "openai-compatible";
 
+    if (staliOnly && nodeType !== "openai-compatible") {
+      return NextResponse.json(
+        { error: "Stali-only mode: only OpenAI-compatible provider nodes are allowed" },
+        { status: 403 }
+      );
+    }
+
+    const normalizedBaseUrlV1 = normalizeBaseUrlV1(baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl);
+    if (staliOnly && !isAllowedStaliBaseUrl(normalizedBaseUrlV1)) {
+      return NextResponse.json(
+        { error: "Stali-only mode: base URL must be a Stali API host" },
+        { status: 403 }
+      );
+    }
+
     if (nodeType === "openai-compatible") {
       if (!apiType || !["chat", "responses"].includes(apiType)) {
         return NextResponse.json({ error: "Invalid OpenAI compatible API type" }, { status: 400 });
@@ -55,7 +80,7 @@ export async function POST(request) {
         type: "openai-compatible",
         prefix: prefix.trim(),
         apiType,
-        baseUrl: (baseUrl || OPENAI_COMPATIBLE_DEFAULTS.baseUrl).trim(),
+        baseUrl: normalizedBaseUrlV1,
         name: name.trim(),
       });
       return NextResponse.json({ node }, { status: 201 });

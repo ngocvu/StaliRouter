@@ -1,10 +1,8 @@
 const api = require("./api/client");
 const { showMenuWithBack } = require("./utils/menuHelper");
-const { showProvidersMenu } = require("./menus/providers");
 const { showApiKeysMenu } = require("./menus/apiKeys");
-const { showCombosMenu } = require("./menus/combos");
 const { showSettingsMenu } = require("./menus/settings");
-const { showCliToolsMenu } = require("./menus/cliTools");
+const { runStaliPreset } = require("./menus/staliPreset");
 
 const COLORS = {
   reset: "\x1b[0m",
@@ -67,53 +65,72 @@ async function startTerminalUI(port) {
   // Configure API client
   api.configure({ port });
 
-  const basePath = ["9Router"];
+  const basePath = ["StaliRouter"];
 
   // Prime header cache before first render
   await refreshHeaderBg(port);
 
-  // Main menu
-  await showMenuWithBack({
-    title: "📡 9Router Terminal UI",
-    breadcrumb: basePath,
-    headerContent: () => getHeader(port),
-    items: [
+  const isAdvancedMode = process.env.STALI_ROUTER_ADVANCED === "1";
+
+  // Main menu (Stali-first by default; advanced mode can re-enable full surface)
+  const items = [
+    {
+      label: "Stali preset (1-click)",
+      action: async () => {
+        await runStaliPreset(port);
+        return true;
+      }
+    },
+    {
+      label: "API Keys",
+      action: async () => {
+        await showApiKeysMenu(port, [...basePath, "API Keys"]);
+        return true;
+      }
+    },
+    {
+      label: "Settings",
+      action: async () => {
+        await showSettingsMenu([...basePath, "Settings"]);
+        return true;
+      }
+    }
+  ];
+
+  if (isAdvancedMode) {
+    const { showProvidersMenu } = require("./menus/providers");
+    const { showCombosMenu } = require("./menus/combos");
+    const { showCliToolsMenu } = require("./menus/cliTools");
+    items.push(
       {
-        label: "Providers",
+        label: "Providers (Advanced)",
         action: async () => {
           await showProvidersMenu([...basePath, "Providers"]);
-          return true; // Continue
-        }
-      },
-      {
-        label: "API Keys",
-        action: async () => {
-          await showApiKeysMenu(port, [...basePath, "API Keys"]);
           return true;
         }
       },
       {
-        label: "Combos",
+        label: "Combos (Advanced)",
         action: async () => {
           await showCombosMenu([...basePath, "Combos"]);
           return true;
         }
       },
       {
-        label: "CLI Tools",
+        label: "CLI Tools (Advanced)",
         action: async () => {
           await showCliToolsMenu(port, [...basePath, "CLI Tools"]);
           return true;
         }
-      },
-      {
-        label: "Settings",
-        action: async () => {
-          await showSettingsMenu([...basePath, "Settings"]);
-          return true;
-        }
       }
-    ],
+    );
+  }
+
+  await showMenuWithBack({
+    title: "📡 StaliRouter Terminal UI",
+    breadcrumb: basePath,
+    headerContent: () => getHeader(port),
+    items,
     backLabel: "← Back to Interface Menu"
   });
 }

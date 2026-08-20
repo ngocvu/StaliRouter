@@ -1,7 +1,7 @@
 {
-  "name": "9router-app",
+  "name": "stalirouter-app",
   "version": "0.5.55",
-  "description": "9Router web dashboard",
+  "description": "StaliRouter web dashboard",
   "private": true,
   "scripts": {
     "dev": "next dev --port 20127",
@@ -14,7 +14,8 @@
     "build:bun": "bun --bun next build --webpack",
     "start:bun": "bun ./.next/standalone/custom-server.js",
     "cli:pack": "npm --prefix cli run pack:cli",
-    "cli:publish": "npm --prefix cli run publish:cli"
+    "cli:publish": "npm --prefix cli run publish:cli",
+    "cli:publish-bundle": "bash scripts/publish-install-bundle.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

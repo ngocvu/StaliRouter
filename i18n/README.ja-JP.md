@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="9Router Dashboard" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="9Router Dashboard" width="800"/>
 
-  # 9Router - 無料 AI ルーター
+  # StaliRouter - 無料 AI ルーター
 
   **コーディングを止めない。スマートフォールバックで無料＆格安AIモデルに自動ルーティング。**
 

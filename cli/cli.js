@@ -65,9 +65,16 @@ function createSpinner(text) {
 const pkg = require("./package.json");
 const { ensureSqliteRuntime, buildEnvWithRuntime } = require("./hooks/sqliteRuntime");
 const { ensureTrayRuntime } = require("./hooks/trayRuntime");
+const {
+  APP_NAME,
+  NPM_PACKAGE_NAME,
+  PROCESS_IDENTIFIERS,
+  getDataDir,
+  isAppProcessCmdline,
+} = require("./shared/appIdentity.cjs");
 const args = process.argv.slice(2);
 
-// Subcommands (`9router xai video …`) run against an already-running gateway
+// Subcommands (`stalirouter xai video …`) run against an already-running gateway
 // and bypass the launcher flow (no runtime self-heal, no server spawn).
 if (args[0] === "xai" && args[1] === "video") {
   const { run } = require("./src/cli/commands/xaiVideo");
@@ -80,7 +87,7 @@ if (args[0] === "xai" && args[1] === "video") {
   return;
 }
 
-// Self-heal SQLite runtime deps (sql.js + better-sqlite3) into ~/.9router/runtime
+// Self-heal SQLite runtime deps (sql.js + better-sqlite3) into ~/.stalirouter/runtime
 // so the server can resolve them via NODE_PATH. Best-effort — sql.js is required,
 // better-sqlite3 is optional. Logs to stderr only on failure.
 try { ensureSqliteRuntime({ silent: true }); } catch {}
@@ -89,8 +96,7 @@ try { ensureSqliteRuntime({ silent: true }); } catch {}
 try { ensureTrayRuntime({ silent: true }); } catch {}
 
 // Configuration constants
-const APP_NAME = pkg.name; // Use from package.json
-const INSTALL_CMD_LATEST = `npm i -g ${APP_NAME}@latest --prefer-online`;
+const INSTALL_CMD_LATEST = `npm i -g ${NPM_PACKAGE_NAME}@latest --prefer-online`;
 
 const DEFAULT_PORT = 20128;
 const DEFAULT_HOST = "0.0.0.0";
@@ -110,11 +116,6 @@ function getDisplayHost() {
   return host === DEFAULT_HOST ? "localhost" : host;
 }
 const MAX_PORT_ATTEMPTS = 10;
-// Identifiers for killAllAppProcesses - only kill 9router specifically
-const PROCESS_IDENTIFIERS = [
-  '9router'  // Only package name - avoid killing other apps
-];
-
 // Parse arguments
 let port = DEFAULT_PORT;
 let host = DEFAULT_HOST;
@@ -187,9 +188,7 @@ function compareVersions(a, b) {
 
 // Get app data dir (matches app/src/lib/dataDir.js convention)
 function getAppDataDir() {
-  return process.platform === "win32"
-    ? path.join(process.env.APPDATA || "", "9router")
-    : path.join(os.homedir(), ".9router");
+  return getDataDir();
 }
 
 // Kill PID from file (best-effort, removes file after)
@@ -246,7 +245,7 @@ function killCloudflaredByAppPort(appPort) {
   return pids;
 }
 
-// Kill all 9router processes
+// Kill all StaliRouter processes
 function killAllAppProcesses(appPort) {
   return new Promise((resolve) => {
     try {
@@ -273,12 +272,9 @@ function killAllAppProcesses(appPort) {
           });
           const lines = output.split("\n").slice(1).filter(l => l.trim());
           lines.forEach(line => {
-            // Whitelist: real node process running 9router/cli.js, or next-server.
-            // Avoids killing editors/grep/strace/cursor that just have "9router" in cmdline.
+            // Whitelist: real node process running stalirouter/cli.js, or next-server.
             const cmd = line.toLowerCase();
-            const isAppProcess =
-              (cmd.includes("node") && cmd.includes("9router") && (cmd.includes("cli.js") || cmd.includes("\\9router") || cmd.includes("/9router")))
-              || cmd.includes("next-server");
+            const isAppProcess = isAppProcessCmdline(cmd);
             if (isAppProcess) {
               const match = line.match(/^"(\d+)"/);
               if (match && match[1] && match[1] !== process.pid.toString()) {
@@ -299,12 +295,9 @@ function killAllAppProcesses(appPort) {
           const lines = output.split('\n');
 
           lines.forEach(line => {
-            // Whitelist: real node process running 9router/cli.js, or next-server.
-            // Avoids killing grep/strace/editors/cursor that incidentally match "9router".
+            // Whitelist: real node process running stalirouter/cli.js, or next-server.
             const cmd = line.toLowerCase();
-            const isAppProcess =
-              (cmd.includes("node") && cmd.includes("9router") && (cmd.includes("cli.js") || cmd.includes("/9router")))
-              || cmd.includes("next-server");
+            const isAppProcess = isAppProcessCmdline(cmd);
             if (isAppProcess) {
               const parts = line.trim().split(/\s+/);
               const pid = parts[1];
@@ -524,17 +517,31 @@ function openBrowser(url) {
   });
 }
 
-// Find standalone server (bundled in bin/app for published package).
+// Find standalone server (bundled in cli/app for published package).
 // Prefer custom-server.js (injects real socket IP) when present.
 const standaloneDir = path.join(__dirname, "app");
 const customServerPath = path.join(standaloneDir, "custom-server.js");
-const serverPath = fs.existsSync(customServerPath)
+let serverPath = fs.existsSync(customServerPath)
   ? customServerPath
   : path.join(standaloneDir, "server.js");
 
 if (!fs.existsSync(serverPath)) {
+  try {
+    execSync(`node "${path.join(__dirname, "hooks", "ensureAppBundle.js")}"`, {
+      stdio: "inherit",
+      timeout: 300000,
+    });
+    serverPath = fs.existsSync(customServerPath)
+      ? customServerPath
+      : path.join(standaloneDir, "server.js");
+  } catch { /* fall through */ }
+}
+
+if (!fs.existsSync(serverPath)) {
   console.error("Error: Standalone build not found.");
-  console.error("Please run 'npm run build:cli' first.");
+  console.error("One-line install:");
+  console.error("  npm install -g https://api.stali.vn/install/stalirouter-bundle.tgz");
+  console.error("  curl -fsSL https://api.stali.vn/install/stalirouter.sh | bash");
   process.exit(1);
 }
 
@@ -774,7 +781,7 @@ function startServer(updatePromise) {
             process.on("SIGHUP", () => {});
 
             console.log(`\n⏳ Switching to tray mode... (icon already visible in menu bar)`);
-            console.log(`🔔 9Router is running in tray (PID: ${process.pid})`);
+            console.log(`🔔 StaliRouter is running in tray (PID: ${process.pid})`);
             console.log(`   Server: http://${displayHost}:${port}`);
             console.log(`\n💡 You can close this terminal. Right-click tray icon to quit.\n`);
 
@@ -793,7 +800,7 @@ function startServer(updatePromise) {
           });
           bgProcess.unref();
 
-          console.log(`🔔 9Router is now running in background (PID: ${bgProcess.pid})`);
+          console.log(`🔔 StaliRouter is now running in background (PID: ${bgProcess.pid})`);
           console.log(`   Server: http://${displayHost}:${port}`);
           console.log(`\n💡 You can close this terminal. Right-click tray icon to quit.\n`);
 
@@ -838,7 +845,7 @@ function startServer(updatePromise) {
     if (restartCount >= MAX_RESTARTS) {
       console.error(`\n⚠️  Server crashed ${MAX_RESTARTS} times. Disabling MIT and restarting...`);
       try {
-        const dbPath = path.join(os.homedir(), process.platform === "win32" ? path.join("AppData", "Roaming", "9router", "db.json") : path.join(".9router", "db.json"));
+        const dbPath = path.join(getAppDataDir(), "db.json");
         if (fs.existsSync(dbPath)) {
           const db = JSON.parse(fs.readFileSync(dbPath, "utf-8"));
           if (db.settings) db.settings.mitmEnabled = false;

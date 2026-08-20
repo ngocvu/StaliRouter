@@ -1,22 +1,21 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="Bảng điều khiển 9Router" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="Bảng điều khiển StaliRouter" width="800"/>
   
-  # 9Router - Free AI Router & Token Saver
+  # StaliRouter - Free AI Router & Token Saver
   
   **Không bao giờ ngừng code. Tiết kiệm 20-40% token với RTK + tự động dự phòng sang các mô hình AI MIỄN PHÍ & giá rẻ.**
   
   **Kết nối tất cả công cụ AI Code (Claude Code, Codex, Cursor, Cline, Copilot, Antigravity...) tới 40+ Nhà cung cấp AI & 100+ Mô hình.**
   
-  [![npm](https://img.shields.io/npm/v/9router.svg)](https://www.npmjs.com/package/9router)
-  [![Downloads](https://img.shields.io/npm/dm/9router.svg)](https://www.npmjs.com/package/9router)
-  [![License](https://github.com/decolua/9router/blob/main/LICENSE)](https://github.com/decolua/9router/blob/main/LICENSE)
+  [![GitHub](https://img.shields.io/github/v/release/ngocvu/StaliRouter?label=StaliRouter)](https://github.com/ngocvu/StaliRouter)
+  [![License](https://img.shields.io/github/license/ngocvu/StaliRouter.svg)](https://github.com/ngocvu/StaliRouter/blob/main/LICENSE)
   
-  [🚀 Bắt đầu nhanh](#-quick-start) • [💡 Tính năng](#-key-features) • [📖 Cài đặt](#-setup-guide) • [🌐 Website](https://9router.com)
+  [🚀 Bắt đầu nhanh](#-quick-start) • [💡 Tính năng](#-key-features) • [📖 Cài đặt](#-setup-guide) • [🌐 Stali API](https://api.stali.vn)
 </div>
 
 ---
 
-## 🤔 Tại sao chọn 9Router?
+## 🤔 Tại sao chọn StaliRouter?
 
 **Ngừng lãng phí tiền bạc, token và không bao giờ lo chạm giới hạn (rate limit):**
 
@@ -26,7 +25,7 @@
 - ❌ Chi phí API đắt đỏ ($20-50/tháng cho từng nhà cung cấp)
 - ❌ Phải chuyển đổi thủ công giữa các nhà cung cấp AI
 
-**9Router giải quyết vấn đề này:**
+**StaliRouter giải quyết vấn đề này:**
 
 - ✅ **RTK Token Saver** - Tự động nén nội dung `tool_result`, tiết kiệm 20-40% token trên mỗi request
 - ✅ **Tối đa hóa gói đăng ký** - Theo dõi hạn mức, tận dụng triệt để trước khi reset
@@ -46,7 +45,7 @@
        │ http://localhost:20128/v1
        ↓
 ┌─────────────────────────────────────────────┐
-│           9Router (Smart Router)            │
+│           StaliRouter (Smart Router)        │
 │  • RTK Token Saver (nén tool_result token) │
 │  • Dịch chuyển định dạng (OpenAI ↔ Claude) │
 │  • Quota tracking (theo dõi hạn mức)       │
@@ -66,33 +65,35 @@ Kết quả: Không bao giờ ngừng code, chi phí tối thiểu + tiết ki�
 
 ## ⚡ Bắt đầu nhanh
 
-**1. Cài đặt toàn cục:**
+**1. Cài từ GitHub:**
 
 ```bash
-npm install -g 9router
-9router
+git clone https://github.com/ngocvu/StaliRouter.git
+cd StaliRouter
+npm install
+npm install -g ./cli
+stalirouter
 ```
 
-🎉 Bảng điều khiển (Dashboard) sẽ tự động mở tại `http://localhost:20128`
+Lệnh cũ `9router` vẫn là alias. Data: `~/.stalirouter` (tự dùng `~/.9router` nếu nâng cấp từ bản upstream).
 
-**2. Kết nối nhà cung cấp MIỄN PHÍ (không cần đăng ký):**
+**2. Stali one-click:**
 
-Bảng điều khiển → Providers → Kết nối **Kiro AI** (~50 credits/tháng miễn phí: Claude 4.5 + GLM-5 + MiniMax) hoặc **OpenCode Free** (không cần auth) → Xong!
+CLI: menu **Stali preset** → nhập API key api.stali.vn  
+Web: `http://localhost:20128/dashboard` → **Stali Setup**
 
-**3. Sử dụng trong công cụ CLI của bạn:**
+**3. Dùng trong công cụ CLI:**
 
 ```
-Cài đặt Claude Code/Codex/OpenClaw/Cursor/Cline/Antigravity:
+Claude Code / Cursor / Codex / Cline:
   Endpoint: http://localhost:20128/v1
-  API Key: [sao chép từ bảng điều khiển]
-  Model: kr/claude-sonnet-4.5
+  API Key:  [local key từ StaliRouter]
+  Model:    claude-fable-5 | claude-sonnet-5 | gpt-5.6-sol
 ```
 
-**Thế là xong!** Bắt đầu code ngay với các mô hình AI MIỄN PHÍ.
+**Biến môi trường Stali-only (mặc định bật):** `STALI_ONLY_MODE=true`, `STALI_ALLOWED_BASE_HOSTS=api.stali.vn`, `STALI_ROUTER_ADVANCED=1` để bật menu nâng cao.
 
-**Phương án khác: chạy từ mã nguồn (repository này):**
-
-Gói kho lưu trữ này là riêng tư (`9router-app`), vì vậy việc chạy từ nguồn/Docker là cách phát triển cục bộ mặc định.
+**Phương án dev từ mã nguồn:**
 
 ```bash
 cp .env.example .env

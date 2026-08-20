@@ -1,9 +1,9 @@
 นี่คือเอกสารแปลภาษาไทยของไฟล์ Markdown ต้นฉบับ โดยรักษาโครงสร้างและซินแท็กซ์ทางเทคนิคทั้งหมดไว้เหมือนเดิม
 
 <div align="center">
-  <img src="../images/9router.png?1" alt="แดชบอร์ด 9Router" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="แดชบอร์ด 9Router" width="800"/>
   
-  # 9Router - Free AI Router
+  # StaliRouter - Free AI Router
   
   **ไม่ต้องหยุดเขียนโค้ด ประหยัดโทเค็น 20-40% ด้วย RTK + สลับอัตโนมัติไปยังโมเดล AI ฟรีและราคาถูก**
   

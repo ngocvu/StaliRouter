@@ -438,6 +438,17 @@ async function getAvailableModels() {
   return makeRequest("GET", "/v1/models");
 }
 
+/**
+ * Upsert a model alias mapping used by the router:
+ * - `alias` is the short public model id users put in their clients
+ * - `model` is the internal fully-qualified model id the router routes to
+ *
+ * @param {Object} data - { alias, model }
+ */
+async function setModelAlias({ alias, model }) {
+  return makeRequest("PUT", "/api/models/alias", { model, alias });
+}
+
 // ============================================================================
 // PROVIDER NODES API (custom providers)
 // ============================================================================
@@ -546,6 +557,7 @@ module.exports = {
   // Models
   getModels,
   getAvailableModels,
+  setModelAlias,
 
   // Provider Nodes (custom providers)
   getProviderNodes,

@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="9Router Dashboard" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="9Router Dashboard" width="800"/>
 
-  # 9Router - Router AI Gratis
+  # StaliRouter - Router AI Gratis
 
   **Jangan berhenti ngoding. Otomatis dialihkan ke model AI gratis & murah dengan smart fallback.**
 

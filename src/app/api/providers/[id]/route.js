@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import {
   getProviderConnectionById,
+  getProviderNodeById,
   getProxyPoolById,
   updateProviderConnection,
   deleteProviderConnection,
 } from "@/models";
+import {
+  assertStaliConnectionAccess,
+  isStaliOnlyMode,
+} from "@/lib/staliOnly";
 
 function normalizeProxyConfig(body = {}) {
   const hasAnyProxyField =
@@ -69,6 +74,9 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     }
 
+    const blocked = await assertStaliConnectionAccess(connection, getProviderNodeById);
+    if (blocked) return blocked;
+
     // Hide sensitive fields
     const result = { ...connection };
     delete result.apiKey;
@@ -105,15 +113,32 @@ export async function PUT(request, { params }) {
     if (!existing) {
       return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     }
+    const staliOnly = isStaliOnlyMode();
+    if (staliOnly) {
+      const blocked = await assertStaliConnectionAccess(existing, getProviderNodeById);
+      if (blocked) return blocked;
+    }
 
     const proxyConfig = normalizeProxyConfig(body);
     if (proxyConfig.error) {
       return NextResponse.json({ error: proxyConfig.error }, { status: 400 });
     }
+    if (staliOnly && proxyConfig.hasAnyProxyField && proxyConfig.connectionProxyEnabled) {
+      return NextResponse.json(
+        { error: "Stali-only mode: per-connection proxy is not available" },
+        { status: 403 },
+      );
+    }
 
     const proxyPoolResult = await normalizeProxyPoolUpdate(body.proxyPoolId);
     if (proxyPoolResult.error) {
       return NextResponse.json({ error: proxyPoolResult.error }, { status: 400 });
+    }
+    if (staliOnly && proxyPoolResult.hasProxyPoolField && proxyPoolResult.proxyPoolId) {
+      return NextResponse.json(
+        { error: "Stali-only mode: proxy pools are not available" },
+        { status: 403 },
+      );
     }
 
     const updateData = {};
@@ -175,6 +200,14 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
+
+    const connection = await getProviderConnectionById(id);
+    if (!connection) {
+      return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+    }
+
+    const blocked = await assertStaliConnectionAccess(connection, getProviderNodeById);
+    if (blocked) return blocked;
 
     const deleted = await deleteProviderConnection(id);
     if (!deleted) {

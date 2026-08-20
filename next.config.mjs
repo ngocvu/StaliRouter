@@ -41,6 +41,13 @@ const nextConfig = {
     optimizePackageImports: ["@xyflow/react", "@dnd-kit/core", "@dnd-kit/sortable", "material-symbols", "marked"],
   },
   webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      const pushExternal = (name) => {
+        if (Array.isArray(config.externals)) config.externals.push(name);
+      };
+      pushExternal("better-sqlite3");
+    }
     // Ignore fs/path modules in browser bundle
     if (!isServer) {
       config.resolve.fallback = {

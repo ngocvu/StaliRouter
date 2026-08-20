@@ -1,8 +1,9 @@
 import { spawn, execSync } from "child_process";
 import path from "path";
 import fs from "fs";
-import os from "os";
 import { UPDATER_CONFIG } from "@/shared/constants/config";
+import { getDataDir } from "@/lib/dataDir";
+import { isAppProcessCmdline } from "@/lib/staliOnly";
 
 const KILL_TIMEOUT_MS = 5000;
 const PROCESS_WAIT_MS = 1500;
@@ -10,13 +11,7 @@ const PROCESS_WAIT_MS = 1500;
 // Kill MITM server by PID file (MITM may run as admin/sudo)
 function killMitmByPidFile() {
   try {
-    const mitmPidFile = path.join(
-      process.platform === "win32"
-        ? path.join(process.env.APPDATA || "", "9router")
-        : path.join(os.homedir(), ".9router"),
-      "mitm",
-      ".mitm.pid"
-    );
+    const mitmPidFile = path.join(getDataDir(), "mitm", ".mitm.pid");
     if (!fs.existsSync(mitmPidFile)) return;
     const pid = parseInt(fs.readFileSync(mitmPidFile, "utf8").trim(), 10);
     if (!pid) return;
@@ -49,12 +44,9 @@ function collectAppPids() {
       const lines = output.split("\n").slice(1).filter(l => l.trim());
       lines.forEach(line => {
         const lower = line.toLowerCase();
-        // Match anything running from 9router install dir or wrapper cli.js
-        const isAppProcess = lower.includes("9router") ||
-          lower.includes("next-server") ||
-          lower.includes("\\bin\\app\\") ||
-          lower.includes("/bin/app/") ||
-          lower.includes("cli.js");
+        const isAppProcess = isAppProcessCmdline(lower) ||
+          lower.includes("cloudflared") ||
+          lower.includes("tray_windows");
         if (isAppProcess) {
           const match = line.match(/^"(\d+)"/);
           if (match && match[1] && match[1] !== process.pid.toString()) pids.push(match[1]);
@@ -77,8 +69,7 @@ function collectAppPids() {
     try {
       const output = execSync("ps aux 2>/dev/null", { encoding: "utf8", timeout: KILL_TIMEOUT_MS });
       output.split("\n").forEach(line => {
-        const isAppProcess = line.includes("9router") ||
-          line.includes("next-server") ||
+        const isAppProcess = isAppProcessCmdline(line) ||
           line.includes("cloudflared") ||
           line.includes("/bin/app/") ||
           line.includes("tray_darwin") ||
@@ -96,12 +87,8 @@ function collectAppPids() {
 }
 
 // Copy updater.js into DATA_DIR so npm -g can overwrite node_modules safely
-function getDataDir() {
-  if (process.env.DATA_DIR) return process.env.DATA_DIR;
-  if (process.platform === "win32") {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "9router");
-  }
-  return path.join(os.homedir(), ".9router");
+function getLocalDataDir() {
+  return getDataDir();
 }
 
 function resolveBundledUpdaterPath() {
@@ -120,7 +107,7 @@ function resolveBundledUpdaterPath() {
 function ensureRuntimeUpdater(bundledPath) {
   try {
     if (!bundledPath || !fs.existsSync(bundledPath)) return bundledPath;
-    const runtimeDir = path.join(getDataDir(), "runtime", "updater");
+    const runtimeDir = path.join(getLocalDataDir(), "runtime", "updater");
     const runtimePath = path.join(runtimeDir, "updater.js");
     if (fs.existsSync(runtimePath)) {
       try {
@@ -156,10 +143,10 @@ export async function killAppProcesses() {
   }
 }
 
-// Resolve npx/9router binary to relaunch after update (cross-platform)
+// Resolve npx/stalirouter binary to relaunch after update (cross-platform)
 function resolveRelaunchCommand() {
   const isWin = process.platform === "win32";
-  // Prefer `npx 9router` — works regardless of global bin path changes after npm i -g
+  // Prefer `npx stalirouter` — works regardless of global bin path changes after npm i -g
   const npx = isWin ? "npx.cmd" : "npx";
   return { cmd: npx, args: [UPDATER_CONFIG.npmPackageName] };
 }

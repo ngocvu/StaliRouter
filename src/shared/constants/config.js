@@ -2,22 +2,29 @@ import pkg from "../../../package.json" with { type: "json" };
 
 // App configuration
 export const APP_CONFIG = {
-  name: "9Router Proxy",
+  name: "StaliRouter",
   description: "AI Infrastructure Management",
   version: pkg.version,
 };
 
 // GitHub configuration
 export const GITHUB_CONFIG = {
-  changelogUrl: "https://raw.githubusercontent.com/decolua/9router/refs/heads/master/CHANGELOG.md",
-  donateUrl: "https://9router.com/api/donate",
+  changelogUrl: "https://raw.githubusercontent.com/ngocvu/StaliRouter/refs/heads/master/CHANGELOG.md",
+  repoUrl: "https://github.com/ngocvu/StaliRouter",
+  upstreamRepoUrl: "https://github.com/decolua/9router",
+  donateUrl: "https://api.stali.vn",
 };
 
 // Updater configuration
+export const INSTALL_BUNDLE_URL = "https://api.stali.vn/install/stalirouter-bundle.tgz";
+
 export const UPDATER_CONFIG = {
-  npmPackageName: "9router",
-  installCmd: "npm i -g 9router",
-  installCmdLatest: "npm i -g 9router@latest --prefer-online",
+  npmPackageName: "stalirouter",
+  legacyNpmPackageName: "9router",
+  installBundleUrl: INSTALL_BUNDLE_URL,
+  installCmd: `npm i -g ${INSTALL_BUNDLE_URL}`,
+  installCmdLatest: `npm i -g ${INSTALL_BUNDLE_URL}`,
+  installCmdNpmRegistry: "npm i -g stalirouter@latest --prefer-online",
   shutdownCountdownSec: 3,
   exitDelayMs: 500,
   statusPort: 20129,

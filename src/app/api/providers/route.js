@@ -9,6 +9,7 @@ import {
 import { APIKEY_PROVIDERS } from "@/shared/constants/config";
 import { AI_PROVIDERS, FREE_TIER_PROVIDERS, WEB_COOKIE_PROVIDERS, isOpenAICompatibleProvider, isAnthropicCompatibleProvider, isCustomEmbeddingProvider } from "@/shared/constants/providers";
 import { normalizeProviderId, normalizeProviderSpecificData } from "@/lib/providerNormalization";
+import { isAllowedStaliBaseUrl, isStaliOnlyMode } from "@/lib/staliOnly";
 
 export const dynamic = "force-dynamic";
 
@@ -49,19 +50,30 @@ async function normalizeProxyPoolId(proxyPoolId) {
 // GET /api/providers - List all connections
 export async function GET() {
   try {
+    const staliOnly = isStaliOnlyMode();
     const connections = await getProviderConnections();
 
     // Build nodeNameMap for compatible providers (id → name)
     let nodeNameMap = {};
+    let nodeBaseMap = {};
     try {
       const nodes = await getProviderNodes();
       for (const node of nodes) {
         if (node.id && node.name) nodeNameMap[node.id] = node.name;
+        if (node.id && node.baseUrl) nodeBaseMap[node.id] = node.baseUrl;
       }
     } catch { }
 
     // Hide sensitive fields, enrich name for compatible providers
-    const safeConnections = connections.map(c => {
+    const safeConnections = connections
+      .filter((c) => {
+        if (!staliOnly) return true;
+        const isCompatible = isOpenAICompatibleProvider(c.provider);
+        if (!isCompatible) return false;
+        const baseUrl = nodeBaseMap[c.provider] || c?.providerSpecificData?.baseUrl;
+        return isAllowedStaliBaseUrl(baseUrl);
+      })
+      .map(c => {
       const isCompatible = isOpenAICompatibleProvider(c.provider) || isAnthropicCompatibleProvider(c.provider);
       const name = isCompatible
         ? (c.name || nodeNameMap[c.provider] || c.providerSpecificData?.nodeName || c.provider)
@@ -74,7 +86,7 @@ export async function GET() {
         refreshToken: undefined,
         idToken: undefined,
       };
-    });
+      });
 
     return NextResponse.json({ connections: safeConnections });
   } catch (error) {
@@ -89,6 +101,7 @@ export async function POST(request) {
     const body = await request.json();
     const provider = normalizeProviderId(body.provider);
     const { apiKey, name, displayName, priority, globalPriority, defaultModel, testStatus } = body;
+    const staliOnly = isStaliOnlyMode();
     const proxyConfig = normalizeProxyConfig(body);
     if (proxyConfig.error) {
       return NextResponse.json({ error: proxyConfig.error }, { status: 400 });
@@ -116,6 +129,12 @@ export async function POST(request) {
     if (!provider || !isValidProvider) {
       return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
     }
+    if (staliOnly && !isOpenAICompatibleProvider(provider)) {
+      return NextResponse.json(
+        { error: "Stali-only mode: only OpenAI-compatible Stali providers are allowed" },
+        { status: 403 }
+      );
+    }
     if (!apiKey && provider !== "ollama-local") {
       return NextResponse.json({ error: `${isWebCookieProvider ? "Cookie value" : "API Key"} is required` }, { status: 400 });
     }
@@ -132,6 +151,12 @@ export async function POST(request) {
       const node = await getProviderNodeById(provider);
       if (!node) {
         return NextResponse.json({ error: "OpenAI Compatible node not found" }, { status: 404 });
+      }
+      if (staliOnly && !isAllowedStaliBaseUrl(node.baseUrl)) {
+        return NextResponse.json(
+          { error: "Stali-only mode: this provider node is not on an allowed Stali host" },
+          { status: 403 }
+        );
       }
       providerSpecificData = {
         prefix: node.prefix,

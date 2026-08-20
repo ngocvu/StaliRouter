@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteProviderConnectionsByProvider, deleteProviderNode, getProviderConnections, getProviderNodeById, updateProviderConnection, updateProviderNode } from "@/models";
+import { assertStaliNodeAccess, isAllowedStaliBaseUrl, isStaliOnlyMode, normalizeBaseUrlV1 } from "@/lib/staliOnly";
 
 // PUT /api/provider-nodes/[id] - Update provider node
 export async function PUT(request, { params }) {
@@ -7,10 +8,17 @@ export async function PUT(request, { params }) {
     const { id } = await params;
     const body = await request.json();
     const { name, prefix, apiType, baseUrl } = body;
+    const staliOnly = isStaliOnlyMode();
     const node = await getProviderNodeById(id);
 
     if (!node) {
       return NextResponse.json({ error: "Provider node not found" }, { status: 404 });
+    }
+    if (staliOnly && node.type !== "openai-compatible") {
+      return NextResponse.json(
+        { error: "Stali-only mode: only OpenAI-compatible provider nodes can be updated" },
+        { status: 403 }
+      );
     }
 
     if (!name?.trim()) {
@@ -46,6 +54,15 @@ export async function PUT(request, { params }) {
       if (sanitizedBaseUrl.endsWith("/embeddings")) {
         sanitizedBaseUrl = sanitizedBaseUrl.slice(0, -"/embeddings".length);
       }
+    }
+    if (node.type === "openai-compatible") {
+      sanitizedBaseUrl = normalizeBaseUrlV1(sanitizedBaseUrl);
+    }
+    if (staliOnly && !isAllowedStaliBaseUrl(sanitizedBaseUrl)) {
+      return NextResponse.json(
+        { error: "Stali-only mode: base URL must be a Stali API host" },
+        { status: 403 }
+      );
     }
 
     const updates = {
@@ -89,6 +106,9 @@ export async function DELETE(request, { params }) {
     if (!node) {
       return NextResponse.json({ error: "Provider node not found" }, { status: 404 });
     }
+
+    const blocked = await assertStaliNodeAccess(node);
+    if (blocked) return blocked;
 
     await deleteProviderConnectionsByProvider(id);
     await deleteProviderNode(id);

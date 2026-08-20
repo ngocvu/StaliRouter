@@ -26,6 +26,8 @@ import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import ModelAvailabilityBadge from "./components/ModelAvailabilityBadge";
 import AddCompatibleModal from "./components/AddCompatibleModal";
 
+const STALI_ONLY = process.env.NEXT_PUBLIC_STALI_ONLY_MODE !== "false";
+
 function getStatusDisplay(connected, error, errorCode) {
   const parts = [];
   if (connected > 0) {
@@ -353,13 +355,14 @@ export default function ProvidersPage() {
     );
   }
 
-  const hasAnyResult =
-    oauthEntries.length > 0 ||
-    freeEntries.length > 0 ||
-    freeTierEntries.length > 0 ||
-    apikeyEntries.length > 0 ||
-    compatibleProviders.length > 0 ||
-    anthropicCompatibleProviders.length > 0;
+  const hasAnyResult = STALI_ONLY
+    ? compatibleProviders.length > 0
+    : oauthEntries.length > 0 ||
+      freeEntries.length > 0 ||
+      freeTierEntries.length > 0 ||
+      apikeyEntries.length > 0 ||
+      compatibleProviders.length > 0 ||
+      anthropicCompatibleProviders.length > 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
@@ -376,17 +379,21 @@ export default function ProvidersPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
-            Custom Providers (OpenAI/Anthropic Compatible){" "}
+            {STALI_ONLY
+              ? "Stali Providers (OpenAI Compatible)"
+              : "Custom Providers (OpenAI/Anthropic Compatible)"}{" "}
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:flex sm:w-auto">
-            <Button
-              size="sm"
-              icon="add"
-              onClick={() => setShowAddAnthropicCompatibleModal(true)}
-              className="w-full sm:w-auto"
-            >
-              Add Anthropic Compatible
-            </Button>
+            {!STALI_ONLY && (
+              <Button
+                size="sm"
+                icon="add"
+                onClick={() => setShowAddAnthropicCompatibleModal(true)}
+                className="w-full sm:w-auto"
+              >
+                Add Anthropic Compatible
+              </Button>
+            )}
             <Button
               size="sm"
               variant="secondary"
@@ -402,11 +409,15 @@ export default function ProvidersPage() {
         anthropicCompatibleProviders.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-2 border border-dashed border-border rounded-xl text-text-muted text-sm">
             <span className="material-symbols-outlined text-[18px]">extension</span>
-            <span>No custom providers — use buttons above to add OpenAI/Anthropic compatible endpoints</span>
+            <span>
+              {STALI_ONLY
+                ? "No Stali provider yet — add OpenAI-compatible endpoint with Stali base URL."
+                : "No custom providers — use buttons above to add OpenAI/Anthropic compatible endpoints"}
+            </span>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {[...compatibleProviders, ...anthropicCompatibleProviders].map(
+            {[...compatibleProviders, ...(STALI_ONLY ? [] : anthropicCompatibleProviders)].map(
               (info) => (
                 <ApiKeyProviderCard
                   key={info.id}
@@ -425,7 +436,7 @@ export default function ProvidersPage() {
       </div>
 
       {/* OAuth Providers */}
-      {oauthEntries.length > 0 && (
+      {!STALI_ONLY && oauthEntries.length > 0 && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
@@ -472,7 +483,7 @@ export default function ProvidersPage() {
       )}
 
       {/* Free Tier Providers */}
-      {(freeEntries.length > 0 || freeTierEntries.length > 0) && (
+      {!STALI_ONLY && (freeEntries.length > 0 || freeTierEntries.length > 0) && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
@@ -533,7 +544,7 @@ export default function ProvidersPage() {
       )}
 
       {/* API Key Providers — fixed list */}
-      {apikeyEntries.length > 0 && (
+      {!STALI_ONLY && apikeyEntries.length > 0 && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">

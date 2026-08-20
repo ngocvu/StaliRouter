@@ -1,25 +1,34 @@
 import fs from "node:fs";
 import path from "path";
-import os from "os";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 
-const APP_NAME = "9router";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 
-function defaultDir() {
-  if (process.platform === "win32") {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), APP_NAME);
+function loadIdentity() {
+  const candidates = [
+    path.join(__dirname, "../../shared/appIdentity.cjs"),
+    path.join(__dirname, "../../../shared/appIdentity.cjs"),
+    path.join(__dirname, "../../../../cli/shared/appIdentity.cjs"),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return require(p);
   }
-  return path.join(os.homedir(), `.${APP_NAME}`);
+  throw new Error("appIdentity.cjs not found");
 }
+
+const { APP_NAME, getDataDir: resolveDataDir } = loadIdentity();
+
+export { APP_NAME };
 
 export function getDataDir() {
   const configured = process.env.DATA_DIR;
-  if (!configured) return defaultDir();
+  if (!configured) return resolveDataDir();
 
-  // On Windows, ignore Unix-style absolute paths (e.g. /var/lib/...) that come
-  // from a Linux-targeted .env or Docker config — they are not valid here.
   if (process.platform === "win32" && /^\//.test(configured)) {
     console.warn(`[DATA_DIR] '${configured}' is a Unix path on Windows → fallback to default`);
-    return defaultDir();
+    return resolveDataDir();
   }
 
   try {
@@ -28,7 +37,7 @@ export function getDataDir() {
   } catch (e) {
     if (e?.code === "EACCES" || e?.code === "EPERM") {
       console.warn(`[DATA_DIR] '${configured}' not writable → fallback ~/.${APP_NAME}`);
-      return defaultDir();
+      return resolveDataDir();
     }
     throw e;
   }

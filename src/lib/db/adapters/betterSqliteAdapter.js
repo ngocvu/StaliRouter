@@ -1,10 +1,19 @@
-import Database from "better-sqlite3";
+import { createRequire } from "node:module";
 import { PRAGMA_SQL } from "../schema.js";
+
+const require = createRequire(import.meta.url);
 
 // Periodic checkpoint to keep WAL file small (avoid huge -wal/-shm growth)
 const CHECKPOINT_INTERVAL_MS = 60 * 1000;
 
 export function createBetterSqliteAdapter(filePath) {
+  let Database;
+  try {
+    Database = require("better-sqlite3");
+  } catch (e) {
+    throw new Error(`better-sqlite3 not available: ${e?.message || e}`);
+  }
+
   const db = new Database(filePath);
   db.exec(PRAGMA_SQL);
   // Schema is created/synced by migrate.js after adapter init
@@ -40,16 +49,9 @@ export function createBetterSqliteAdapter(filePath) {
 
   return {
     driver: "better-sqlite3",
-    run(sql, params = []) { return prepare(sql).run(...params); },
-    get(sql, params = []) { return prepare(sql).get(...params); },
-    all(sql, params = []) { return prepare(sql).all(...params); },
-    exec(sql) { return db.exec(sql); },
-    transaction(fn) { return db.transaction(fn)(); },
-    checkpoint() { try { db.pragma("wal_checkpoint(TRUNCATE)"); } catch {} },
-    close() {
-      clearInterval(checkpointTimer);
-      gracefulClose();
-    },
-    raw: db,
+    prepare,
+    exec: (sql) => db.exec(sql),
+    transaction: (fn) => db.transaction(fn)(),
+    close: gracefulClose,
   };
 }

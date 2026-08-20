@@ -3,6 +3,11 @@ import { getSettings, validateApiKey } from "@/lib/localDb";
 import { getConsistentMachineId } from "@/shared/utils/machineId";
 import { verifyDashboardAuthToken } from "@/lib/auth/dashboardSession";
 import { hasTrustedPeerHeaders } from "@/lib/auth/trustedPeer";
+import {
+  isStaliBlockedApiPath,
+  isStaliOnlyMode,
+  staliBlockedFeatureName,
+} from "@/lib/staliOnly";
 
 const CLI_TOKEN_HEADER = "x-9r-cli-token";
 const CLI_TOKEN_SALT = "9r-cli-auth";
@@ -200,6 +205,19 @@ export const __test__ = {
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
+
+  // Stali-only: block legacy feature APIs (OAuth, combos, proxy pools, …)
+  if (isStaliOnlyMode() && isStaliBlockedApiPath(pathname)) {
+    return NextResponse.json(
+      { error: `Stali-only mode: ${staliBlockedFeatureName(pathname)} is not available` },
+      { status: 403 },
+    );
+  }
+
+  // Stali profile — localhost installer / setup scripts (read-only, no secrets beyond local router key)
+  if (pathname === "/api/stali/profile" && isLocalRequest(request)) {
+    return NextResponse.next();
+  }
 
   // Local-only gate for spawn-capable / host-secret routes.
   if (LOCAL_ONLY_PATHS.some((p) => pathname.startsWith(p))) {

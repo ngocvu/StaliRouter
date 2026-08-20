@@ -26,6 +26,11 @@ product
 # misc
 .DS_Store
 *.pem
+*.tgz
+stalirouter-*.tgz
+
+# CLI prebuilt bundle (built by npm run cli:pack — ship via tarball, not git)
+/cli/app/
 
 # debug
 npm-debug.log*

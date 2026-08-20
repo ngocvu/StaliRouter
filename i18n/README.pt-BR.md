@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="Painel do 9Router" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="Painel do 9Router" width="800"/>
   
   # 9Router — roteador de IA GRATUITO e economizador de tokens
   

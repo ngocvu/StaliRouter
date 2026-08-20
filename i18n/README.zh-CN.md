@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="9Router Dashboard" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="9Router Dashboard" width="800"/>
   
-  # 9Router - 免费 AI 路由器
+  # StaliRouter - 免费 AI 路由器
   
   **永不停歇的编程体验。智能回退，自动路由到免费和廉价的 AI 模型。**
   

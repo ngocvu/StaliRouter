@@ -9,7 +9,20 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
-const packageName = process.env.UPDATER_PKG_NAME || "9router";
+function loadIdentity() {
+  const candidates = [
+    path.join(__dirname, "../../../shared/appIdentity.cjs"),
+    path.join(__dirname, "../../../../shared/appIdentity.cjs"),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return require(p);
+  }
+  throw new Error("appIdentity.cjs not found for updater");
+}
+
+const { NPM_PACKAGE_NAME, getDataDir } = loadIdentity();
+
+const packageName = process.env.UPDATER_PKG_NAME || NPM_PACKAGE_NAME;
 const port = parseInt(process.env.UPDATER_PORT || "20129", 10);
 const tailLines = parseInt(process.env.UPDATER_TAIL_LINES || "8", 10);
 const maxRetries = parseInt(process.env.UPDATER_RETRIES || "3", 10);
@@ -21,14 +34,10 @@ const waitCheckMs = parseInt(process.env.UPDATER_WAIT_CHECK_MS || "500", 10);
 const appPort = parseInt(process.env.UPDATER_APP_PORT || "20128", 10);
 
 // Data directory (match mitm/paths.js logic)
-function getDataDir() {
-  if (process.env.DATA_DIR) return process.env.DATA_DIR;
-  if (process.platform === "win32") {
-    return path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "9router");
-  }
-  return path.join(os.homedir(), ".9router");
+function resolveDataDir() {
+  return getDataDir();
 }
-const updateDir = path.join(getDataDir(), "update");
+const updateDir = path.join(resolveDataDir(), "update");
 try { fs.mkdirSync(updateDir, { recursive: true }); } catch { /* best effort */ }
 const statusFile = path.join(updateDir, "status.json");
 const logFile = path.join(updateDir, "install.log");

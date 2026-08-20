@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="Panel de control de 9Router" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="Panel de control de 9Router" width="800"/>
   
-  # 9Router - Enrutador de IA GRATUITO y ahorrador de tokens
+  # StaliRouter - Enrutador de IA GRATUITO y ahorrador de tokens
   
   **Nunca dejes de programar. Ahorra entre 20-40% de tokens con RTK + reserva automática hacia modelos de IA GRATUITOS y económicos.**
   

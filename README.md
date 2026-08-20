@@ -1,21 +1,17 @@
 <div align="center">
-  <img src="./images/9router.png?1" alt="9Router Dashboard" width="800"/>
+  <img src="./images/stalirouter.png?1" alt="StaliRouter Dashboard" width="800"/>
   
-  # 9Router - FREE AI Router & Token Saver
+  # StaliRouter - FREE AI Router & Token Saver
   
   **Never stop coding. Save 20-40% tokens with RTK + auto-fallback to FREE & cheap AI models.**
   
   **Connect All AI Code Tools (Claude Code, Cursor, Antigravity, Copilot, Codex, Gemini, OpenCode, Cline, OpenClaw...) to 40+ AI Providers & 100+ Models.**
   
-  [![npm](https://img.shields.io/npm/v/9router.svg)](https://www.npmjs.com/package/9router)
-  [![Downloads](https://img.shields.io/npm/dm/9router.svg)](https://www.npmjs.com/package/9router)
-  [![Docker Pulls](https://img.shields.io/docker/pulls/decolua/9router.svg?logo=docker&label=Docker%20pulls)](https://hub.docker.com/r/decolua/9router)
-  [![GHCR](https://img.shields.io/badge/GHCR-decolua%2F9router-blue?logo=github)](https://github.com/decolua/9router/pkgs/container/9router)
-  [![License](https://img.shields.io/npm/l/9router.svg)](https://github.com/decolua/9router/blob/main/LICENSE)
+  [![GitHub](https://img.shields.io/github/v/release/ngocvu/StaliRouter?label=StaliRouter)](https://github.com/ngocvu/StaliRouter)
+  [![License](https://img.shields.io/github/license/ngocvu/StaliRouter.svg)](https://github.com/ngocvu/StaliRouter/blob/main/LICENSE)
+  [![Upstream](https://img.shields.io/badge/upstream-decolua%2F9router-blue?logo=github)](https://github.com/decolua/9router)
 
-<a href="https://trendshift.io/repositories/22628" target="_blank"><img src="https://trendshift.io/api/badge/repositories/22628" alt="decolua%2F9router | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
-[🚀 Quick Start](#-quick-start) • [💡 Features](#-key-features) • [📖 Setup](#-setup-guide) • [🌐 Website](https://9router.com)
+[🚀 Quick Start](#-quick-start) • [💡 Features](#-key-features) • [📖 Setup](#-setup-guide) • [🌐 Stali API](https://api.stali.vn)
 
 [🇧🇷 Português (Brasil)](./i18n/README.pt-BR.md) • [🇻🇳 Tiếng Việt](./i18n/README.vi.md) • [🇨🇳 中文](./i18n/README.zh-CN.md) • [🇯🇵 日本語](./i18n/README.ja-JP.md) • [🇷🇺 Русский](./i18n/README.ru.md) • [🇹🇭 ไทย](./i18n/README.th.md) • [🇮🇷 فارسی](./i18n/README.fa_IR.md) • [🇮🇩 Indonesia](./i18n/README.id-ID.md) • [🇪🇸 Español](./i18n/README.es.md) • [🇫🇷 Français](./i18n/README.fr.md)
 
@@ -23,7 +19,7 @@
 
 ---
 
-## 🤔 Why 9Router?
+## 🤔 Why StaliRouter?
 
 **Stop wasting money, tokens and hitting limits:**
 
@@ -33,7 +29,7 @@
 - ❌ Expensive APIs ($20-50/month per provider)
 - ❌ Manual switching between providers
 
-**9Router solves this:**
+**StaliRouter solves this:**
 
 - ✅ **RTK Token Saver** - Auto-compress tool_result content, save 20-40% tokens per request
 - ✅ **Maximize subscriptions** - Track quota, use every bit before reset
@@ -53,7 +49,7 @@
        │ http://localhost:20128/v1
        ↓
 ┌─────────────────────────────────────────────┐
-│           9Router (Smart Router)            │
+│           StaliRouter (Smart Router)        │
 │  • RTK Token Saver (cut tool_result tokens) │
 │  • Format translation (OpenAI ↔ Claude)     │
 │  • Quota tracking                           │
@@ -73,33 +69,65 @@ Result: Never stop coding, minimal cost + 20-40% token savings via RTK
 
 ## ⚡ Quick Start
 
-**1. Install globally:**
+**One command (works today — chưa cần npm registry):**
 
 ```bash
-npm install -g 9router
-9router
+npm install -g https://api.stali.vn/install/stalirouter-bundle.tgz && stalirouter
 ```
 
-🎉 Dashboard opens at `http://localhost:20128`
+Hoặc:
 
-**2. Connect a FREE provider (no signup needed):**
+```bash
+curl -fsSL https://api.stali.vn/install/stalirouter.sh | bash
+```
 
-Dashboard → Providers → Connect **Kiro AI** (~50 credits/month free: Claude 4.5 + GLM-5 + MiniMax) or **OpenCode Free** (no auth) → Done!
+Sau khi publish npm (`npm i -g stalirouter`) sẽ dùng được lệnh ngắn tương tự `9router`.
+
+Windows:
+
+```powershell
+irm https://api.stali.vn/install/stalirouter.ps1 | iex
+```
+
+Legacy alias: lệnh `9router` vẫn trỏ cùng binary.
+
+**Stali preset (recommended):** one-click connect to [api.stali.vn](https://api.stali.vn) — chỉ cần base URL + API key Stali.
+
+**Install from GitHub (dev):**
+
+```bash
+git clone https://github.com/ngocvu/StaliRouter.git
+cd StaliRouter
+npm install
+npm install -g ./cli   # cần bundle — dùng script publish hoặc npm run cli:pack trước
+stalirouter
+```
+
+```bash
+stalirouter
+# Menu → Stali preset → nhập API key api.stali.vn
+```
+
+Hoặc web: `http://localhost:20128/dashboard` → **Stali Setup**.
 
 **3. Use in your CLI tool:**
 
 ```
-Claude Code/Codex/OpenClaw/Cursor/Cline Settings:
+Claude Code / Cursor / Codex / Cline:
   Endpoint: http://localhost:20128/v1
-  API Key: [copy from dashboard]
-  Model: kr/claude-sonnet-4.5
+  API Key:  [local key from StaliRouter dashboard]
+  Model:    claude-fable-5 | claude-sonnet-5 | gpt-5.6-sol
 ```
 
-**That's it!** Start coding with FREE AI models.
+**Env (Stali-only, mặc định bật):**
 
-**Alternative: run from source (this repository):**
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `STALI_ONLY_MODE` | `true` | Chỉ cho phép provider Stali |
+| `STALI_ALLOWED_BASE_HOSTS` | `api.stali.vn` | Host base URL được phép |
+| `STALI_ROUTER_ADVANCED=1` | — | Bật menu CLI nâng cao |
 
-This repository package is private (`9router-app`), so source/Docker execution is the expected local development path.
+**Alternative: run dashboard from source (dev):**
 
 ```bash
 cp .env.example .env
@@ -118,6 +146,7 @@ Default URLs:
 
 - Dashboard: `http://localhost:20128/dashboard`
 - OpenAI-compatible API: `http://localhost:20128/v1`
+- Stali profile API: `http://localhost:20128/api/stali/profile`
 
 ---
 

@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="../images/9router.png?1" alt="Панель управления 9Router" width="800"/>
+  <img src="../images/stalirouter.png?1" alt="Панель управления 9Router" width="800"/>
   
-  # 9Router - Free AI Router
+  # StaliRouter - Free AI Router
   
   **Никогда не прекращайте кодить. Автоматическая маршрутизация к БЕСПЛАТНЫМ и дешёвым AI-моделям с умным механизмом резервирования.**
   

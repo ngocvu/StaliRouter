@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useNotificationStore } from "@/store/notificationStore";
 import Sidebar from "../Sidebar";
 import Header from "../Header";
+import { useEffect } from "react";
 
 function getToastStyle(type) {
   if (type === "success") {
@@ -34,8 +36,31 @@ function getToastStyle(type) {
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const notifications = useNotificationStore((state) => state.notifications);
   const removeNotification = useNotificationStore((state) => state.removeNotification);
+  const staliOnly = process.env.NEXT_PUBLIC_STALI_ONLY_MODE !== "false";
+
+  useEffect(() => {
+    if (!staliOnly) return;
+    const blockedPrefixes = [
+      "/dashboard/combos",
+      "/dashboard/token-saver",
+      "/dashboard/quota",
+      "/dashboard/proxy-pools",
+      "/dashboard/skills",
+      "/dashboard/translator",
+      "/dashboard/console-log",
+      "/dashboard/media-providers",
+      "/dashboard/pxpipe",
+      "/dashboard/mitm",
+      "/dashboard/basic-chat",
+      "/dashboard/providers/new",
+    ];
+    if (blockedPrefixes.some((p) => pathname.startsWith(p))) {
+      router.replace("/dashboard");
+    }
+  }, [pathname, router, staliOnly]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg">
@@ -95,6 +120,15 @@ export default function DashboardLayout({ children }) {
         {/* Faint grid background */}
         <div className="landing-grid absolute inset-0 pointer-events-none -z-10" aria-hidden="true" />
         <Header key={pathname} onMenuClick={() => setSidebarOpen(true)} />
+        {staliOnly && (
+          <div className="mx-6 mt-3 lg:mx-10">
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[16px]">verified_user</span>
+              <span className="font-medium">Stali-only Protected Mode</span>
+              <span className="opacity-80">Only allowed Stali providers/endpoints are available.</span>
+            </div>
+          </div>
+        )}
         <div className={`flex-1 overflow-y-auto custom-scrollbar ${pathname === "/dashboard/basic-chat" ? "" : "p-6 lg:p-10"} ${pathname === "/dashboard/basic-chat" ? "flex flex-col overflow-hidden" : ""}`}>
           <div className={`${pathname === "/dashboard/basic-chat" ? "flex-1 w-full h-full flex flex-col" : "max-w-7xl mx-auto"}`}>{children}</div>
         </div>

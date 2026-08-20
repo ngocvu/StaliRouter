@@ -1,8 +1,8 @@
 
 <div align="center">
-  <img src="./images/9router.png?1" alt="9Router Dashboard" width="800"/>
+  <img src="./images/stalirouter.png?1" alt="9Router Dashboard" width="800"/>
   
-  # 9Router - 免费 AI 路由器与 Token 节省器
+  # StaliRouter - 免费 AI 路由器与 Token 节省器
   
   **编程永不停歇。使用 RTK + 自动切换到免费/低价 AI 模型，节省 20-40% 的 tokens。**
   

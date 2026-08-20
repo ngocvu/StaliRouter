@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Card, Button, Input, Select, Toggle } from "@/shared/components";
 import { AI_PROVIDERS, AUTH_METHODS } from "@/shared/constants/config";
 
+const STALI_ONLY = process.env.NEXT_PUBLIC_STALI_ONLY_MODE !== "false";
+
 const providerOptions = Object.values(AI_PROVIDERS).map((p) => ({
   value: p.id,
   label: p.name,
@@ -71,6 +73,26 @@ export default function NewProviderPage() {
   };
 
   const selectedProvider = AI_PROVIDERS[formData.provider];
+
+  if (STALI_ONLY) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <Link
+            href="/dashboard/providers"
+            className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-primary transition-colors mb-4"
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            Back to Providers
+          </Link>
+          <h1 className="text-3xl font-semibold tracking-tight">Stali-only Mode</h1>
+          <p className="text-text-muted mt-2">
+            Generic provider creation is disabled. Use OpenAI-compatible Stali provider setup from the Providers page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
