@@ -1,6 +1,6 @@
 {
   "name": "stalirouter",
-  "version": "0.5.56",
+  "version": "0.5.57",
   "description": "StaliRouter CLI - Start and manage StaliRouter server",
   "bin": {
     "stalirouter": "./cli.js"

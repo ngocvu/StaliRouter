@@ -29,6 +29,20 @@ describe("Driver fallback chain", () => {
     expect(["better-sqlite3", "node:sqlite", "sql.js"]).toContain(db.driver);
   });
 
+  it("adapter exposes get/all/run (login + settings)", async () => {
+    const { getAdapter } = await import("@/lib/db/driver.js");
+    const db = await getAdapter();
+    expect(typeof db.get).toBe("function");
+    expect(typeof db.all).toBe("function");
+    expect(typeof db.run).toBe("function");
+    db.run(
+      `INSERT INTO settings(id, data) VALUES(1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data`,
+      ['{"requireLogin":true}'],
+    );
+    const row = db.get(`SELECT data FROM settings WHERE id = 1`);
+    expect(row?.data).toContain("requireLogin");
+  });
+
   it("falls back to node:sqlite when better-sqlite3 unavailable", async () => {
     // Mock the better-sqlite3 adapter to throw
     vi.doMock("@/lib/db/adapters/betterSqliteAdapter.js", () => {

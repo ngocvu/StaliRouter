@@ -49,9 +49,21 @@ export function createBetterSqliteAdapter(filePath) {
 
   return {
     driver: "better-sqlite3",
+    run(sql, params = []) {
+      const r = prepare(sql).run(...params);
+      return { changes: Number(r.changes ?? 0), lastInsertRowid: Number(r.lastInsertRowid ?? 0) };
+    },
+    get(sql, params = []) {
+      return prepare(sql).get(...params);
+    },
+    all(sql, params = []) {
+      return prepare(sql).all(...params);
+    },
     prepare,
     exec: (sql) => db.exec(sql),
     transaction: (fn) => db.transaction(fn)(),
+    checkpoint() { try { db.pragma("wal_checkpoint(TRUNCATE)"); } catch {} },
     close: gracefulClose,
+    raw: db,
   };
 }
