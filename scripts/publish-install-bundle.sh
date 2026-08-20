@@ -41,6 +41,9 @@ fi
 TGZ="$(ls -1 "$ROOT"/stalirouter-*.tgz "$ROOT/../stalirouter-*.tgz" 2>/dev/null | sort -V | tail -1)"
 [[ -f "$TGZ" ]] || { echo "Missing stalirouter-*.tgz after pack (checked $ROOT and parent)"; exit 1; }
 
+# Drop stale versioned copies in install dir so sort/copy never picks an old bundle.
+find "$INSTALL_DIR" -maxdepth 1 -name 'stalirouter-*.tgz' ! -name "$(basename "$TGZ")" -delete 2>/dev/null || true
+
 VERSION="$(basename "$TGZ" .tgz | sed 's/stalirouter-//')"
 DEST_VERSION="$INSTALL_DIR/stalirouter-${VERSION}.tgz"
 DEST_LATEST="$INSTALL_DIR/stalirouter-bundle.tgz"
