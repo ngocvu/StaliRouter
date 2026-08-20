@@ -1,24 +1,5 @@
 import fs from "node:fs";
-import path from "path";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
-
-function loadIdentity() {
-  const candidates = [
-    path.join(__dirname, "../../shared/appIdentity.cjs"),
-    path.join(__dirname, "../../../shared/appIdentity.cjs"),
-    path.join(__dirname, "../../../../cli/shared/appIdentity.cjs"),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return require(p);
-  }
-  throw new Error("appIdentity.cjs not found");
-}
-
-const { APP_NAME, getDataDir: resolveDataDir } = loadIdentity();
+import { APP_NAME, getDataDir as resolveDataDir } from "./appIdentity.js";
 
 export { APP_NAME };
 

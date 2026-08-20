@@ -1,19 +1,15 @@
-/**
- * StaliRouter identity — repo root copy for Next.js dev/build paths.
- * Keep in sync with cli/shared/appIdentity.cjs (npm package canonical).
- */
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-const APP_NAME = "stalirouter";
-const LEGACY_APP_NAME = "9router";
-const NPM_PACKAGE_NAME = "stalirouter";
-const LEGACY_NPM_PACKAGE_NAME = "9router";
-const GITHUB_REPO = "ngocvu/StaliRouter";
-const GITHUB_UPSTREAM_REPO = "decolua/9router";
+export const APP_NAME = "stalirouter";
+export const LEGACY_APP_NAME = "9router";
+export const NPM_PACKAGE_NAME = "stalirouter";
+export const LEGACY_NPM_PACKAGE_NAME = "9router";
+export const GITHUB_REPO = "ngocvu/StaliRouter";
+export const GITHUB_UPSTREAM_REPO = "decolua/9router";
 
-const PROCESS_IDENTIFIERS = [APP_NAME, LEGACY_APP_NAME, LEGACY_NPM_PACKAGE_NAME];
+export const PROCESS_IDENTIFIERS = [APP_NAME, LEGACY_APP_NAME, LEGACY_NPM_PACKAGE_NAME];
 
 function defaultDataDirFor(appName) {
   if (process.platform === "win32") {
@@ -23,7 +19,7 @@ function defaultDataDirFor(appName) {
   return path.join(os.homedir(), `.${appName}`);
 }
 
-function resolveDataDir(configured) {
+function resolveConfiguredDataDir(configured) {
   if (process.platform === "win32" && /^\//.test(configured)) {
     return null;
   }
@@ -36,10 +32,10 @@ function resolveDataDir(configured) {
   }
 }
 
-function getDataDir() {
+export function getDataDir() {
   const configured = process.env.DATA_DIR;
   if (configured) {
-    const resolved = resolveDataDir(configured);
+    const resolved = resolveConfiguredDataDir(configured);
     if (resolved) return resolved;
     console.warn(`[StaliRouter] DATA_DIR '${configured}' not writable → fallback`);
   }
@@ -52,7 +48,7 @@ function getDataDir() {
   return primary;
 }
 
-function isAppProcessCmdline(cmd) {
+export function isAppProcessCmdline(cmd) {
   const lower = String(cmd || "").toLowerCase();
   if (lower.includes("next-server")) return true;
   if (!lower.includes("node")) return false;
@@ -70,15 +66,6 @@ function isAppProcessCmdline(cmd) {
   return hasMarker && hasName;
 }
 
-module.exports = {
-  APP_NAME,
-  LEGACY_APP_NAME,
-  NPM_PACKAGE_NAME,
-  LEGACY_NPM_PACKAGE_NAME,
-  GITHUB_REPO,
-  GITHUB_UPSTREAM_REPO,
-  PROCESS_IDENTIFIERS,
-  getDataDir,
-  isAppProcessCmdline,
-  defaultDataDirFor,
-};
+export function defaultDataDirForExport(appName) {
+  return defaultDataDirFor(appName);
+}

@@ -9,18 +9,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
-function loadIdentity() {
-  const candidates = [
-    path.join(__dirname, "../../../shared/appIdentity.cjs"),
-    path.join(__dirname, "../../../../shared/appIdentity.cjs"),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return require(p);
-  }
-  throw new Error("appIdentity.cjs not found for updater");
-}
-
-const { NPM_PACKAGE_NAME, getDataDir } = loadIdentity();
+const { NPM_PACKAGE_NAME, getDataDir } = require("../appIdentity.cjs");
 
 const packageName = process.env.UPDATER_PKG_NAME || NPM_PACKAGE_NAME;
 const port = parseInt(process.env.UPDATER_PORT || "20129", 10);

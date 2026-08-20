@@ -321,15 +321,20 @@ function buildCliPackage() {
     console.log("⏭️  No updater files found\n");
   }
 
-  // Step 7c: Copy shared appIdentity for standalone runtime (dataDir, updater, mitm)
-  console.log("7️⃣ c Copying shared appIdentity...");
+  // Step 7c: Copy appIdentity.cjs for standalone runtime (updater, mitm)
+  console.log("7️⃣ c Copying appIdentity.cjs...");
+  const identitySrc = path.join(appDir, "src", "lib", "appIdentity.cjs");
+  const identityDest = path.join(cliAppDir, "src", "lib", "appIdentity.cjs");
+  if (fs.existsSync(identitySrc)) {
+    fs.mkdirSync(path.dirname(identityDest), { recursive: true });
+    fs.copyFileSync(identitySrc, identityDest);
+    console.log("✅ Copied src/lib/appIdentity.cjs\n");
+  }
   const sharedSrc = path.join(cliDir, "shared");
   const sharedDest = path.join(cliAppDir, "shared");
   if (fs.existsSync(sharedSrc)) {
     copyRecursive(sharedSrc, sharedDest);
-    console.log("✅ Copied shared appIdentity\n");
-  } else {
-    console.log("⏭️  No cli/shared found\n");
+    console.log("✅ Copied cli/shared (npm CLI)\n");
   }
 
   // Step 8: Build MITM server (config driven - see app/cli/scripts/buildMitm.js)
