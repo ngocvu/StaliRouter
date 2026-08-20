@@ -91,7 +91,7 @@ function handleClick(index, options, onAutostartToggle) {
   const { onQuit, onOpenDashboard, port } = options;
   if (index === MENU_INDEX.DASHBOARD) {
     if (onOpenDashboard) onOpenDashboard();
-    else openBrowser(`http://localhost:${port}/dashboard`);
+    else openBrowser(`http://${process.platform === "darwin" ? "127.0.0.1" : "localhost"}:${port}/dashboard`);
   } else if (index === MENU_INDEX.AUTOSTART) {
     const enabled = getAutostartEnabled();
     try {

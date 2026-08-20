@@ -4,6 +4,7 @@ const { spawn, exec, execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
+const http = require("http");
 const net = require("net");
 const os = require("os");
 
@@ -23,6 +24,39 @@ function waitServerReady(port, { timeoutMs = 15000, intervalMs = 150 } = {}) {
       });
     };
     tryConnect();
+  });
+}
+
+// TCP open ≠ HTTP ready (Next boot). Wait for /api/health before opening browser.
+function waitHttpReady(port, { timeoutMs = 60000, intervalMs = 250, path = "/api/health" } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  return new Promise((resolve) => {
+    const tryFetch = () => {
+      const req = http.get(
+        { host: "127.0.0.1", port, path, timeout: 3000 },
+        (res) => {
+          res.resume();
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 500) {
+            resolve(true);
+          } else if (Date.now() >= deadline) {
+            resolve(false);
+          } else {
+            setTimeout(tryFetch, intervalMs);
+          }
+        },
+      );
+      req.on("error", () => {
+        req.destroy();
+        if (Date.now() >= deadline) return resolve(false);
+        setTimeout(tryFetch, intervalMs);
+      });
+      req.on("timeout", () => {
+        req.destroy();
+        if (Date.now() >= deadline) return resolve(false);
+        setTimeout(tryFetch, intervalMs);
+      });
+    };
+    tryFetch();
   });
 }
 
@@ -111,9 +145,12 @@ function getLanIp() {
   return null;
 }
 
-// Local URL stays "localhost"; warn separately when bound to all interfaces (network-exposed).
+// Prefer 127.0.0.1 over "localhost" — macOS often resolves localhost → ::1 first (ERR_EMPTY_RESPONSE).
 function getDisplayHost() {
-  return host === DEFAULT_HOST ? "localhost" : host;
+  if (host === DEFAULT_HOST) {
+    return process.platform === "darwin" ? "127.0.0.1" : "localhost";
+  }
+  return host;
 }
 const MAX_PORT_ATTEMPTS = 10;
 // Parse arguments
@@ -384,52 +421,135 @@ function killProxyByPidFile() {
   } catch { }
 }
 
-// Kill any process on specific port
+// Kill any StaliRouter-owned process on a specific port (never foreign e.g. upstream 9router).
 function killProcessOnPort(port) {
   return new Promise((resolve) => {
     try {
       const platform = process.platform;
       let pid;
+      let cmdline = "";
 
       if (platform === "win32") {
         try {
           const output = execSync(`netstat -ano | findstr :${port}`, {
-            encoding: 'utf8',
+            encoding: "utf8",
             shell: true,
             windowsHide: true,
-            timeout: 5000
+            timeout: 5000,
           }).trim();
-          const lines = output.split('\n').filter(l => l.includes('LISTENING'));
+          const lines = output.split("\n").filter((l) => l.includes("LISTENING"));
           if (lines.length > 0) {
             pid = lines[0].trim().split(/\s+/).pop();
-            execSync(`taskkill /F /PID ${pid} 2>nul`, { stdio: 'ignore', shell: true, windowsHide: true, timeout: 3000 });
+            try {
+              cmdline = execSync(
+                `powershell -NonInteractive -Command "(Get-CimInstance Win32_Process -Filter \\"ProcessId=${pid}\\").CommandLine"`,
+                { encoding: "utf8", windowsHide: true, timeout: 3000 },
+              ).trim();
+            } catch { /* ignore */ }
           }
         } catch (e) {
           // Port is free or error
         }
       } else {
-        // macOS/Linux
         try {
-          const pidOutput = execSync(`lsof -ti:${port}`, {
-            encoding: 'utf8',
-            stdio: ['pipe', 'pipe', 'ignore']
+          const pidOutput = execSync(`lsof -ti:${port} -sTCP:LISTEN`, {
+            encoding: "utf8",
+            stdio: ["pipe", "pipe", "ignore"],
           }).trim();
           if (pidOutput) {
-            pid = pidOutput.split('\n')[0];
-            execSync(`kill -9 ${pid} 2>/dev/null`, { stdio: 'ignore', timeout: 3000 });
+            pid = pidOutput.split("\n")[0];
+            try {
+              cmdline = execSync(`ps -p ${pid} -o command=`, {
+                encoding: "utf8",
+                stdio: ["pipe", "pipe", "ignore"],
+              }).trim();
+            } catch { /* ignore */ }
           }
         } catch (e) {
           // Port is free or error
         }
       }
 
-      // Wait for port to be released
-      setTimeout(() => resolve(), 500);
+      if (pid && isAppProcessCmdline(cmdline)) {
+        if (platform === "win32") {
+          execSync(`taskkill /F /PID ${pid} 2>nul`, { stdio: "ignore", shell: true, windowsHide: true, timeout: 3000 });
+        } else {
+          execSync(`kill -9 ${pid} 2>/dev/null`, { stdio: "ignore", timeout: 3000 });
+        }
+        setTimeout(() => resolve(true), 500);
+        return;
+      }
+
+      resolve(false);
     } catch (err) {
-      // Silent fail - continue anyway
-      resolve();
+      resolve(false);
     }
   });
+}
+
+function getPortListenerCommand(port) {
+  try {
+    if (process.platform === "win32") {
+      const output = execSync(`netstat -ano | findstr :${port}`, {
+        encoding: "utf8",
+        shell: true,
+        windowsHide: true,
+        timeout: 5000,
+      }).trim();
+      const line = output.split("\n").find((l) => l.includes("LISTENING"));
+      if (!line) return null;
+      const pid = line.trim().split(/\s+/).pop();
+      return execSync(
+        `powershell -NonInteractive -Command "(Get-CimInstance Win32_Process -Filter \\"ProcessId=${pid}\\").CommandLine"`,
+        { encoding: "utf8", windowsHide: true, timeout: 3000 },
+      ).trim();
+    }
+    const pid = execSync(`lsof -ti:${port} -sTCP:LISTEN`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim().split("\n")[0];
+    if (!pid) return null;
+    return execSync(`ps -p ${pid} -o command=`, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host: "127.0.0.1", port }, () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on("error", () => {
+      socket.destroy();
+      resolve(true);
+    });
+  });
+}
+
+// Pick listen port: reuse if ours; skip foreign (e.g. 9router on 20128) → try next.
+async function resolveListenPort(preferredPort) {
+  for (let i = 0; i < MAX_PORT_ATTEMPTS; i++) {
+    const candidate = preferredPort + i;
+    const listener = getPortListenerCommand(candidate);
+    if (!listener) {
+      if (await isPortFree(candidate)) return candidate;
+      continue;
+    }
+    if (isAppProcessCmdline(listener)) {
+      await killProcessOnPort(candidate);
+      if (await isPortFree(candidate)) return candidate;
+      continue;
+    }
+    if (i === 0 && candidate === preferredPort) {
+      console.log(`\x1b[33mℹ Port ${candidate} in use by another app (e.g. 9router) — trying ${candidate + 1}…\x1b[0m`);
+    }
+  }
+  throw new Error(`No free port in range ${preferredPort}-${preferredPort + MAX_PORT_ATTEMPTS - 1}`);
 }
 
 
@@ -548,8 +668,15 @@ if (!fs.existsSync(serverPath)) {
 // Start server immediately; run update check in parallel (not on the critical path).
 const updatePromise = checkForUpdate();
 killAllAppProcesses(port)
-  .then(() => killProcessOnPort(port))
-  .then(() => startServer(updatePromise));
+  .then(() => resolveListenPort(port))
+  .then((resolvedPort) => {
+    if (resolvedPort !== port) port = resolvedPort;
+    return startServer(updatePromise);
+  })
+  .catch((err) => {
+    console.error(`❌ ${err.message || err}`);
+    process.exit(1);
+  });
 
 // Show interface selection menu
 async function showInterfaceMenu(latestVersion) {
@@ -733,6 +860,19 @@ function startServer(updatePromise) {
 
   // Wait for server to be ready, then show interface menu loop + tray
   waitServerReady(port).then(async () => {
+    const httpReady = await waitHttpReady(port);
+    if (!httpReady) {
+      console.error(`\n⚠️  Server port ${port} is open but HTTP is not responding yet.`);
+      console.error(`   Try: stalirouter --log`);
+      console.error(`   Or open manually: http://127.0.0.1:${port}/dashboard\n`);
+      if (crashLog.length) {
+        console.error("--- Server log ---");
+        crashLog.slice(-20).forEach((l) => console.error(l));
+        console.error("--- End log ---\n");
+      }
+    } else {
+      console.log(`\n✅ Dashboard: http://${getDisplayHost()}:${port}/dashboard\n`);
+    }
     // Resolve parallel update check (already running); don't block server start on it.
     const latestVersion = await latestVersionPromise;
     // Start tray icon alongside TUI
@@ -755,7 +895,12 @@ function startServer(updatePromise) {
           setTimeout(() => process.exit(0), 200);
           return;
         } else if (choice === "web") {
-          openBrowser(url);
+          if (!(await waitHttpReady(port, { timeoutMs: 10000 }))) {
+            console.error(`\n⚠️  Server not responding. Open manually after it starts:`);
+            console.error(`   http://127.0.0.1:${port}/dashboard\n`);
+          } else {
+            openBrowser(url);
+          }
           // Wait for user to come back
           const { pause } = require("./src/cli/utils/input");
           await pause("\nPress Enter to go back to menu...");

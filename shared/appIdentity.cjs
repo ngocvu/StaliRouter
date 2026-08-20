@@ -1,6 +1,6 @@
 /**
- * StaliRouter identity — repo root copy for Next.js dev/build paths.
- * Keep in sync with cli/shared/appIdentity.cjs (npm package canonical).
+ * Canonical StaliRouter identity — bundled inside npm package (cli/shared).
+ * Coexists with upstream `9router` npm package: separate bin, data dir, process scope.
  */
 const fs = require("node:fs");
 const os = require("node:os");
@@ -13,7 +13,8 @@ const LEGACY_NPM_PACKAGE_NAME = "9router";
 const GITHUB_REPO = "ngocvu/StaliRouter";
 const GITHUB_UPSTREAM_REPO = "decolua/9router";
 
-const PROCESS_IDENTIFIERS = [APP_NAME, LEGACY_APP_NAME, LEGACY_NPM_PACKAGE_NAME];
+/** Process names we manage — excludes upstream 9router installs. */
+const PROCESS_IDENTIFIERS = [APP_NAME, NPM_PACKAGE_NAME];
 
 function defaultDataDirFor(appName) {
   if (process.platform === "win32") {
@@ -45,29 +46,30 @@ function getDataDir() {
   }
 
   const primary = defaultDataDirFor(APP_NAME);
-  const legacy = defaultDataDirFor(LEGACY_APP_NAME);
 
-  if (fs.existsSync(primary)) return primary;
-  if (fs.existsSync(legacy)) return legacy;
+  // Opt-in migration only — default stays ~/.stalirouter so 9router can run in parallel.
+  if (process.env.STALIROUTER_LEGACY_DATA === "1") {
+    const legacy = defaultDataDirFor(LEGACY_APP_NAME);
+    if (fs.existsSync(legacy) && !fs.existsSync(primary)) return legacy;
+  }
+
   return primary;
 }
 
+/** True only for StaliRouter-owned processes — never upstream node_modules/9router. */
 function isAppProcessCmdline(cmd) {
   const lower = String(cmd || "").toLowerCase();
-  if (lower.includes("next-server")) return true;
-  if (!lower.includes("node")) return false;
-  const markers = [
-    "cli.js",
-    `/${APP_NAME}`,
-    `\\${APP_NAME}`,
-    `/${LEGACY_APP_NAME}`,
-    `\\${LEGACY_APP_NAME}`,
-    `/${NPM_PACKAGE_NAME}`,
-    `\\${NPM_PACKAGE_NAME}`,
-  ];
-  const hasMarker = markers.some((m) => lower.includes(m));
-  const hasName = PROCESS_IDENTIFIERS.some((id) => lower.includes(id));
-  return hasMarker && hasName;
+  if (!lower.includes("node") && !lower.includes("next-server")) return false;
+
+  // Upstream 9router global install — do not kill or reclaim its port.
+  if (/node_modules[/\\]9router[/\\]/.test(lower) && !lower.includes("stalirouter")) {
+    return false;
+  }
+  if (/\b9router[/\\]app\b/.test(lower) && !lower.includes("stalirouter")) {
+    return false;
+  }
+
+  return lower.includes("stalirouter");
 }
 
 module.exports = {

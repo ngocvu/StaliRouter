@@ -2,38 +2,30 @@
 
 **Local AI router optimized for [api.stali.vn](https://api.stali.vn)**
 
-## One-line install (Mac / Linux / Windows)
+## Install
 
 ```bash
-npm install -g https://api.stali.vn/install/stalirouter-bundle.tgz && stalirouter
+npm install -g stalirouter && stalirouter
 ```
 
-Or:
+Coexists with upstream **`9router`** (decolua) — separate global bin, data dir, and process scope:
+
+| | `9router` | `stalirouter` |
+|---|---|---|
+| Command | `9router` | `stalirouter` |
+| Data | `~/.9router` | `~/.stalirouter` |
+| Default port | `20128` | auto-picks next free port if `20128` taken |
+
+Optional: reuse old 9router data → `STALIROUTER_LEGACY_DATA=1 stalirouter`
+
+## One-line install script
 
 ```bash
 curl -fsSL https://api.stali.vn/install/stalirouter.sh | bash
 ```
 
-Windows:
-
-```powershell
-irm https://api.stali.vn/install/stalirouter.ps1 | iex
-```
-
-> `npm install -g stalirouter` works only **after** publishing to npm registry (not yet).  
-> Use the tarball URL above until then.
-
-Legacy bin alias: `9router`
-
-## Publish to npm (maintainers)
+## Publish (maintainers)
 
 ```bash
-cd cli && npm login && npm publish --access public
-```
-
-## Publish install bundle to api.stali.vn
-
-```bash
-npm run cli:publish-bundle
-# → https://api.stali.vn/install/stalirouter-bundle.tgz
+cd cli && npm publish --access public
 ```

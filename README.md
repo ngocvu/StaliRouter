@@ -69,27 +69,27 @@ Result: Never stop coding, minimal cost + 20-40% token savings via RTK
 
 ## ⚡ Quick Start
 
-**One command (works today — chưa cần npm registry):**
+**One command:**
 
 ```bash
-npm install -g https://api.stali.vn/install/stalirouter-bundle.tgz && stalirouter
+npm install -g stalirouter && stalirouter
 ```
 
-Hoặc:
+Chạy **song song** với `9router` upstream — không xung đột bin/data:
 
-```bash
-curl -fsSL https://api.stali.vn/install/stalirouter.sh | bash
-```
+| | `9router` | `stalirouter` |
+|---|---|---|
+| Lệnh | `9router` | `stalirouter` |
+| Data | `~/.9router` | `~/.stalirouter` |
+| Port mặc định | `20128` | `20128` → tự nhảy `20129` nếu 9router đang giữ |
 
-Sau khi publish npm (`npm i -g stalirouter`) sẽ dùng được lệnh ngắn tương tự `9router`.
+Migrate data cũ (tùy chọn): `STALIROUTER_LEGACY_DATA=1 stalirouter`
 
 Windows:
 
 ```powershell
 irm https://api.stali.vn/install/stalirouter.ps1 | iex
 ```
-
-Legacy alias: lệnh `9router` vẫn trỏ cùng binary.
 
 **Stali preset (recommended):** one-click connect to [api.stali.vn](https://api.stali.vn) — chỉ cần base URL + API key Stali.
 

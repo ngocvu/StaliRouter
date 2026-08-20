@@ -9,7 +9,7 @@ export const LEGACY_NPM_PACKAGE_NAME = "9router";
 export const GITHUB_REPO = "ngocvu/StaliRouter";
 export const GITHUB_UPSTREAM_REPO = "decolua/9router";
 
-export const PROCESS_IDENTIFIERS = [APP_NAME, LEGACY_APP_NAME, LEGACY_NPM_PACKAGE_NAME];
+export const PROCESS_IDENTIFIERS = [APP_NAME, NPM_PACKAGE_NAME];
 
 function defaultDataDirFor(appName) {
   if (process.platform === "win32") {
@@ -41,29 +41,25 @@ export function getDataDir() {
   }
 
   const primary = defaultDataDirFor(APP_NAME);
-  const legacy = defaultDataDirFor(LEGACY_APP_NAME);
 
-  if (fs.existsSync(primary)) return primary;
-  if (fs.existsSync(legacy)) return legacy;
+  if (process.env.STALIROUTER_LEGACY_DATA === "1") {
+    const legacy = defaultDataDirFor(LEGACY_APP_NAME);
+    if (fs.existsSync(legacy) && !fs.existsSync(primary)) return legacy;
+  }
+
   return primary;
 }
 
 export function isAppProcessCmdline(cmd) {
   const lower = String(cmd || "").toLowerCase();
-  if (lower.includes("next-server")) return true;
-  if (!lower.includes("node")) return false;
-  const markers = [
-    "cli.js",
-    `/${APP_NAME}`,
-    `\\${APP_NAME}`,
-    `/${LEGACY_APP_NAME}`,
-    `\\${LEGACY_APP_NAME}`,
-    `/${NPM_PACKAGE_NAME}`,
-    `\\${NPM_PACKAGE_NAME}`,
-  ];
-  const hasMarker = markers.some((m) => lower.includes(m));
-  const hasName = PROCESS_IDENTIFIERS.some((id) => lower.includes(id));
-  return hasMarker && hasName;
+  if (!lower.includes("node") && !lower.includes("next-server")) return false;
+  if (/node_modules[/\\]9router[/\\]/.test(lower) && !lower.includes("stalirouter")) {
+    return false;
+  }
+  if (/\b9router[/\\]app\b/.test(lower) && !lower.includes("stalirouter")) {
+    return false;
+  }
+  return lower.includes("stalirouter");
 }
 
 export function defaultDataDirForExport(appName) {
